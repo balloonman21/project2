@@ -49,7 +49,7 @@ void addNode(struct NODE* parent, struct NODE* newNode) {
 void mkdir(char pathName[]){
 
   
- if (strcmp(pathName, "/") == 0) {
+if (strcmp(pathName, "/") == 0) {
         printf("MKDIR ERROR: no path provided\n");
         return;
     }
@@ -74,33 +74,34 @@ void mkdir(char pathName[]){
         temp = temp->siblingPtr;
     }
 
-    // Create the new directory node
-    struct NODE* newDir = (struct NODE*)malloc(sizeof(struct NODE));
-    if (newDir == NULL) {
+    // Allocate space for the new directory node
+    struct NODE* newNode = (struct NODE*)malloc(sizeof(struct NODE));
+    if (newNode == NULL) {
         printf("MKDIR ERROR: memory allocation failed\n");
         return;
     }
 
-    // Initialize the new directory node
-    strcpy(newDir->name, baseName);
-    newDir->fileType = 'd'; // Set as directory
-    newDir->childPtr = NULL; // No children initially
-    newDir->siblingPtr = NULL; // No siblings initially
-    newDir->parentPtr = parentDir; // Set the parent directory
+    // Set the fields for the new node
+    strcpy(newNode->name, baseName);
+    newNode->fileType = 'd'; // Mark it as a directory
+    newNode->childPtr = NULL; // No children initially
+    newNode->siblingPtr = NULL; // No siblings initially
+    newNode->parentPtr = parentDir; // Set its parent to the parentDir
 
-    // Add the new directory node to the parent's child list
-    if (parentDir->childPtr == NULL) {
-        parentDir->childPtr = newDir; // If no children, set as the first child
+    // Attach the new node to the parent directory's child list
+    struct NODE* child = parentDir->childPtr;
+    if (child == NULL) {
+        // Parent has no child yet, set newNode as the first child
+        parentDir->childPtr = newNode;
     } else {
-        // Otherwise, add it as the last sibling
-        struct NODE* sibling = parentDir->childPtr;
-        while (sibling->siblingPtr != NULL) {
-            sibling = sibling->siblingPtr;
+        // Traverse to the end of the sibling list and attach newNode there
+        while (child->siblingPtr != NULL) {
+            child = child->siblingPtr;
         }
-        sibling->siblingPtr = newDir; // Append to the sibling list
+        child->siblingPtr = newNode; // Attach as the last sibling
     }
 
-    // Successful directory creation
+    // Successfully created directory
     printf("MKDIR SUCCESS: node %s successfully created\n", pathName);
 }
 

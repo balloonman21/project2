@@ -82,7 +82,7 @@ struct NODE* splitPath(char* pathName, char* baseName, char* dirName){
     strcpy(dirName, "");
     strcpy(baseName, "");
 
-    // Determine if the path is absolute or relative
+    // Start from root if absolute path, else from cwd
     struct NODE* currentDir = (pathName[0] == '/') ? root : cwd;
 
     // Special case: if path is root "/"

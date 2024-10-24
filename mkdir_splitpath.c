@@ -49,7 +49,7 @@ void addNode(struct NODE* parent, struct NODE* newNode) {
 void mkdir(char pathName[]){
 
   
-    if (strcmp(pathName, "/") == 0) {
+ if (strcmp(pathName, "/") == 0) {
         printf("MKDIR ERROR: no path provided\n");
         return;
     }
@@ -57,84 +57,109 @@ void mkdir(char pathName[]){
     char baseName[64];
     char dirName[256];
 
+    // Call splitPath to get the parent directory and split dirName and baseName
     struct NODE* parentDir = splitPath(pathName, baseName, dirName);
     if (parentDir == NULL) {
-        return; // Error printed by splitPath
-    }
-
-    if (checkIfExists(parentDir, baseName)) {
-        printf("MKDIR ERROR: directory %s already exists\n", baseName);
+        // If splitPath returns NULL, directory path doesn't exist
         return;
     }
 
+    // Check if a node with baseName already exists in the parentDir
+    struct NODE* temp = parentDir->childPtr;
+    while (temp != NULL) {
+        if (strcmp(temp->name, baseName) == 0) {
+            printf("MKDIR ERROR: directory %s already exists\n", baseName);
+            return;
+        }
+        temp = temp->siblingPtr;
+    }
+
+    // Create the new directory node
     struct NODE* newDir = (struct NODE*)malloc(sizeof(struct NODE));
     if (newDir == NULL) {
         printf("MKDIR ERROR: memory allocation failed\n");
         return;
     }
 
+    // Initialize the new directory node
     strcpy(newDir->name, baseName);
-    newDir->fileType = 'd';
-    newDir->childPtr = NULL;
-    newDir->siblingPtr = NULL;
-    newDir->parentPtr = parentDir;
+    newDir->fileType = 'd'; // Set as directory
+    newDir->childPtr = NULL; // No children initially
+    newDir->siblingPtr = NULL; // No siblings initially
+    newDir->parentPtr = parentDir; // Set the parent directory
 
-    addNode(parentDir, newDir);
+    // Add the new directory node to the parent's child list
+    if (parentDir->childPtr == NULL) {
+        parentDir->childPtr = newDir; // If no children, set as the first child
+    } else {
+        // Otherwise, add it as the last sibling
+        struct NODE* sibling = parentDir->childPtr;
+        while (sibling->siblingPtr != NULL) {
+            sibling = sibling->siblingPtr;
+        }
+        sibling->siblingPtr = newDir; // Append to the sibling list
+    }
 
+    // Successful directory creation
     printf("MKDIR SUCCESS: node %s successfully created\n", pathName);
 }
 
 //handles tokenizing and absolute/relative pathing options
 struct NODE* splitPath(char* pathName, char* baseName, char* dirName){
 
-// Initialize dirName and baseName to empty strings
-    strcpy(dirName, "");
+// Initialize the dirName and baseName to empty strings
     strcpy(baseName, "");
+    strcpy(dirName, "");
 
-    // Start from root if absolute path, else from cwd
-    struct NODE* currentDir = (pathName[0] == '/') ? root : cwd;
-
-    // Special case: if path is root "/"
+    // Edge case: if pathName is just "/"
     if (strcmp(pathName, "/") == 0) {
         strcpy(dirName, "/");
         strcpy(baseName, "");
         return root;
     }
 
-    // Find the last '/' in the path
+    // Find the last occurrence of '/' in pathName
     char* lastSlash = strrchr(pathName, '/');
-    if (lastSlash != NULL) {
-        // Copy the directory part (everything before the last '/')
-        strncpy(dirName, pathName, lastSlash - pathName);
-        dirName[lastSlash - pathName] = '\0'; // Null-terminate dirName
-
-        // Copy the file or directory name (everything after the last '/')
-        strcpy(baseName, lastSlash + 1);
-    } else {
-        // If there is no '/', the entire pathName is the baseName
+    if (lastSlash == NULL) {
+        // Case where pathName contains only the file/dir name (no '/')
         strcpy(baseName, pathName);
-        strcpy(dirName, "");
-        return currentDir; // No directory path, stay in cwd or root
+        strcpy(dirName, ""); // Current directory
+        return cwd; // Assume current working directory (cwd)
     }
 
-    // If dirName is empty, we're in the current directory
-    if (strlen(dirName) == 0) {
-        return currentDir;
-    }
+    // Otherwise, split the path into dirName and baseName
+    strncpy(dirName, pathName, lastSlash - pathName);
+    dirName[lastSlash - pathName] = '\0'; // Null terminate dirName
+    strcpy(baseName, lastSlash + 1); // The part after the last '/'
 
-    // Tokenize the dirName and traverse the directory tree
+    // Traverse the tree from root or cwd depending on the path type (absolute/relative)
+    struct NODE* currentDir = (pathName[0] == '/') ? root : cwd;
+
+    // Tokenize the dirName by "/"
     char* token = strtok(dirName, "/");
     while (token != NULL) {
-        struct NODE* nextDir = findDirectory(currentDir, token);
-        if (nextDir == NULL) {
-            // If directory does not exist, print error and return NULL
+        struct NODE* found = NULL;
+        struct NODE* temp = currentDir->childPtr;
+
+        // Search for the directory in the current level
+        while (temp != NULL) {
+            if (strcmp(temp->name, token) == 0 && temp->fileType == 'd') {
+                found = temp;
+                break;
+            }
+            temp = temp->siblingPtr;
+        }
+
+        // If not found, print error and return NULL
+        if (found == NULL) {
             printf("ERROR: directory %s does not exist\n", token);
             return NULL;
         }
-        currentDir = nextDir;
+
+        // Move to the next directory level
+        currentDir = found;
         token = strtok(NULL, "/");
     }
 
-    // Return the directory where baseName resides
-    return currentDir;
+    return currentDir; // Return the parent directory where the target resides
 }

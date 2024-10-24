@@ -4,6 +4,20 @@
 extern struct NODE* root;
 extern struct NODE* cwd;
 
+struct NODE* findDirectory(struct NODE* parent, const char* dirName) {
+    struct NODE* currentChild = parent->childPtr;
+
+    // Traverse through children and siblings to find the directory
+    while (currentChild != NULL) {
+        if (strcmp(currentChild->name, dirName) == 0 && currentChild->fileType == 'd') {
+            return currentChild; // Directory found
+        }
+        currentChild = currentChild->siblingPtr; // Move to the next sibling
+    }
+
+    return NULL; // Directory not found
+}
+
 //make directory
 void mkdir(char pathName[]){
 
@@ -60,23 +74,6 @@ void mkdir(char pathName[]){
 
     return;
 }
-
-
-struct NODE* findDirectory(struct NODE* parent, const char* dirName) {
-    struct NODE* currentChild = parent->childPtr;
-
-    // Traverse through children and siblings to find the directory
-    while (currentChild != NULL) {
-        if (strcmp(currentChild->name, dirName) == 0 && currentChild->fileType == 'd') {
-            return currentChild; // Directory found
-        }
-        currentChild = currentChild->siblingPtr; // Move to the next sibling
-    }
-
-    return NULL; // Directory not found
-}
-
-
 
 //handles tokenizing and absolute/relative pathing options
 struct NODE* splitPath(char* pathName, char* baseName, char* dirName){

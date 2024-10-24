@@ -1,77 +1,96 @@
 #include "types.h"
+#include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
+
 
 extern struct NODE* root;
 extern struct NODE* cwd;
 
 struct NODE* findDirectory(struct NODE* parent, const char* dirName) {
-    struct NODE* currentChild = parent->childPtr;
-
-    // Traverse through children and siblings to find the directory
-    while (currentChild != NULL) {
-        if (strcmp(currentChild->name, dirName) == 0 && currentChild->fileType == 'd') {
-            return currentChild; // Directory found
+    struct NODE* current = parent->childPtr;
+    while (current != NULL) {
+        if (strcmp(current->name, dirName) == 0 && current->fileType == 'd') {
+            return current;
         }
-        currentChild = currentChild->siblingPtr; // Move to the next sibling
+        current = current->siblingPtr;
     }
-
-    return NULL; // Directory not found
+    return NULL;
 }
 
+
+// Helper function to check if a directory or file already exists in the parent directory
+int checkIfExists(struct NODE* parent, const char* baseName) {
+    struct NODE* current = parent->childPtr;
+    while (current != NULL) {
+        if (strcmp(current->name, baseName) == 0) {
+            return 1; // Found the directory or file
+        }
+        current = current->siblingPtr;
+    }
+    return 0;
+}
+
+// Helper function to add a new node (directory) to the parent's child/sibling list
+void addNode(struct NODE* parent, struct NODE* newNode) {
+    if (parent->childPtr == NULL) {
+        // If parent has no child, add newNode as the first child
+        parent->childPtr = newNode;
+    } else {
+        // Traverse sibling list and add newNode at the end
+        struct NODE* current = parent->childPtr;
+        while (current->siblingPtr != NULL) {
+            current = current->siblingPtr;
+        }
+        current->siblingPtr = newNode;
+    }
+}
 //make directory
 void mkdir(char pathName[]){
 
   
-// If no path provided, print error
-    if (strcmp(pathName, "/") == 0 || strlen(pathName) == 0) {
+// Edge case: if no path is provided (i.e., pathName is "/")
+    if (strcmp(pathName, "/") == 0) {
         printf("MKDIR ERROR: no path provided\n");
         return;
     }
 
-    char baseName[256];
+    // Initialize dirName and baseName arrays to hold split path parts
+    char baseName[64];
     char dirName[256];
-
-    // Call splitPath to get baseName and dirName, and the parent directory
+    
+    // Call splitPath to get the parent directory and the baseName (target directory name)
     struct NODE* parentDir = splitPath(pathName, baseName, dirName);
 
-    // If the directory is invalid (splitPath returned NULL), exit
+    // If parentDir is NULL, splitPath encountered an error (directory does not exist)
     if (parentDir == NULL) {
-        return;
+        return; // Error already printed by splitPath, exit
     }
 
-    // Check if a directory with the same name already exists in the parent directory
-    struct NODE* existingDir = findDirectory(parentDir, baseName);
-    if (existingDir != NULL) {
+    // Check if the target directory already exists in the parent directory
+    if (checkIfExists(parentDir, baseName)) {
         printf("MKDIR ERROR: directory %s already exists\n", baseName);
         return;
     }
 
-    // Create a new directory node
+    // Create the new directory node
     struct NODE* newDir = (struct NODE*)malloc(sizeof(struct NODE));
-    if (!newDir) {
+    if (newDir == NULL) {
         printf("MKDIR ERROR: memory allocation failed\n");
         return;
     }
+    
+    // Set fields of the new directory node
     strcpy(newDir->name, baseName);
-    newDir->fileType = 'd'; // Directory type
-    newDir->parentPtr = parentDir;
-    newDir->childPtr = NULL;
-    newDir->siblingPtr = NULL;
+    newDir->fileType = 'd';  // Set as directory
+    newDir->childPtr = NULL; // No children initially
+    newDir->siblingPtr = NULL; // No siblings initially
+    newDir->parentPtr = parentDir; // Set the parent directory
 
-    // Insert the new directory into the parent's child/sibling structure
-    if (parentDir->childPtr == NULL) {
-        // If the parent has no children, set this as the first child
-        parentDir->childPtr = newDir;
-    } else {
-        // Otherwise, insert it as the last sibling of the existing children
-        struct NODE* sibling = parentDir->childPtr;
-        while (sibling->siblingPtr != NULL) {
-            sibling = sibling->siblingPtr;
-        }
-        sibling->siblingPtr = newDir;
-    }
+    // Add the new directory to the parent's child/sibling list
+    addNode(parentDir, newDir);
 
-    // Print success message
+    // Success message
     printf("MKDIR SUCCESS: node %s successfully created\n", pathName);
 }
 

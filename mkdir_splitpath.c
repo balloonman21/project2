@@ -22,7 +22,7 @@ struct NODE* findDirectory(struct NODE* parent, const char* dirName) {
 void mkdir(char pathName[]){
 
   
-     // If no path provided, print error
+// If no path provided, print error
     if (strcmp(pathName, "/") == 0 || strlen(pathName) == 0) {
         printf("MKDIR ERROR: no path provided\n");
         return;
@@ -78,61 +78,54 @@ void mkdir(char pathName[]){
 //handles tokenizing and absolute/relative pathing options
 struct NODE* splitPath(char* pathName, char* baseName, char* dirName){
 
-    // TO BE IMPLEMENTED
-    // NOTE THAT WITHOUT COMPLETING THIS FUNCTION CORRECTLY
-    // rm, rmdir, ls, cd, touch COMMANDS WILL NOT EXECUTE CORRECTLY
-    // SEE THE PROVIDED EXECUTABLE TO SEE THEIR EXPECTED BEHAVIOR
-
-    // YOUR CODE HERE
-    //
-    // char* pathCopy;
-    // strcpy(pathName,pathCopy);
-    // char* token = strtok(pathName, "/");
-    // while(token!=NULL){
-    //     strcat(pathName, token);
-    //     if(token == NULL){
-            
-    //     }
-    // }
-        // Initialize dirName and baseName
-    // Initialize dirName and baseName
+// Initialize dirName and baseName to empty strings
     strcpy(dirName, "");
     strcpy(baseName, "");
 
-    // Check for root case ("/")
+    // Determine if the path is absolute or relative
+    struct NODE* currentDir = (pathName[0] == '/') ? root : cwd;
+
+    // Special case: if path is root "/"
     if (strcmp(pathName, "/") == 0) {
         strcpy(dirName, "/");
         strcpy(baseName, "");
-        return &root; // Return the root node
+        return root;
     }
 
-    // Split the path into dirName and baseName
-    char* lastSlash = strrchr(pathName, '/'); // Find the last occurrence of '/'
+    // Find the last '/' in the path
+    char* lastSlash = strrchr(pathName, '/');
     if (lastSlash != NULL) {
-        strncpy(dirName, pathName, lastSlash - pathName); // Copy everything before the last '/'
-        dirName[lastSlash - pathName] = '\0'; // Add null terminator to dirName
-        strcpy(baseName, lastSlash + 1); // Copy everything after the last '/'
+        // Copy the directory part (everything before the last '/')
+        strncpy(dirName, pathName, lastSlash - pathName);
+        dirName[lastSlash - pathName] = '\0'; // Null-terminate dirName
+
+        // Copy the file or directory name (everything after the last '/')
+        strcpy(baseName, lastSlash + 1);
     } else {
-        // No slash found, meaning pathName is the baseName
+        // If there is no '/', the entire pathName is the baseName
         strcpy(baseName, pathName);
-        strcpy(dirName, ""); // Current directory
-        return &root; // Assuming root is the current directory
+        strcpy(dirName, "");
+        return currentDir; // No directory path, stay in cwd or root
     }
 
-    // Traverse the directories in dirName starting from the root
-    struct NODE* currentDir = &root;
+    // If dirName is empty, we're in the current directory
+    if (strlen(dirName) == 0) {
+        return currentDir;
+    }
+
+    // Tokenize the dirName and traverse the directory tree
     char* token = strtok(dirName, "/");
     while (token != NULL) {
         struct NODE* nextDir = findDirectory(currentDir, token);
         if (nextDir == NULL) {
-            // Directory does not exist, print error and return NULL
+            // If directory does not exist, print error and return NULL
             printf("ERROR: directory %s does not exist\n", token);
             return NULL;
         }
-        currentDir = nextDir; // Move to the next directory
-        token = strtok(NULL, "/"); // Get the next directory in the path
+        currentDir = nextDir;
+        token = strtok(NULL, "/");
     }
 
-    // After traversal, currentDir will be the directory where baseName resides
+    // Return the directory where baseName resides
     return currentDir;
 }

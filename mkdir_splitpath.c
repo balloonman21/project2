@@ -22,7 +22,7 @@ struct NODE* findDirectory(struct NODE* parent, const char* dirName) {
 void mkdir(char pathName[]){
 
   
-        // If no path provided, print error
+     // If no path provided, print error
     if (strcmp(pathName, "/") == 0 || strlen(pathName) == 0) {
         printf("MKDIR ERROR: no path provided\n");
         return;
@@ -48,6 +48,10 @@ void mkdir(char pathName[]){
 
     // Create a new directory node
     struct NODE* newDir = (struct NODE*)malloc(sizeof(struct NODE));
+    if (!newDir) {
+        printf("MKDIR ERROR: memory allocation failed\n");
+        return;
+    }
     strcpy(newDir->name, baseName);
     newDir->fileType = 'd'; // Directory type
     newDir->parentPtr = parentDir;

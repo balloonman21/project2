@@ -108,59 +108,72 @@ if (strcmp(pathName, "/") == 0) {
 //handles tokenizing and absolute/relative pathing options
 struct NODE* splitPath(char* pathName, char* baseName, char* dirName){
 
-// Initialize the dirName and baseName to empty strings
-    strcpy(baseName, "");
-    strcpy(dirName, "");
-
-    // Edge case: if pathName is just "/"
+    // Start with handling the root directory case
     if (strcmp(pathName, "/") == 0) {
         strcpy(dirName, "/");
         strcpy(baseName, "");
-        return root;
+        return root;  // Return root as it's the only directory
     }
 
-    // Find the last occurrence of '/' in pathName
-    char* lastSlash = strrchr(pathName, '/');
-    if (lastSlash == NULL) {
-        // Case where pathName contains only the file/dir name (no '/')
-        strcpy(baseName, pathName);
-        strcpy(dirName, ""); // Current directory
-        return cwd; // Assume current working directory (cwd)
+    // Initialize dirName and baseName
+    strcpy(dirName, "");
+    strcpy(baseName, "");
+
+    // Variables to keep track of traversal
+    struct NODE* current = NULL;
+
+    // Determine whether path is absolute or relative
+    if (pathName[0] == '/') {
+        current = root;  // Absolute path starts at root
+    } else {
+        current = cwd;   // Relative path starts at current working directory (cwd)
     }
 
-    // Otherwise, split the path into dirName and baseName
-    strncpy(dirName, pathName, lastSlash - pathName);
-    dirName[lastSlash - pathName] = '\0'; // Null terminate dirName
-    strcpy(baseName, lastSlash + 1); // The part after the last '/'
+    // Extract the baseName (the last part of the path after the last '/')
+    char tempPath[256];
+    strcpy(tempPath, pathName);
 
-    // Traverse the tree from root or cwd depending on the path type (absolute/relative)
-    struct NODE* currentDir = (pathName[0] == '/') ? root : cwd;
+    char* lastSlash = strrchr(tempPath, '/');
+    if (lastSlash != NULL) {
+        // Split the path into dirName and baseName
+        strncpy(dirName, tempPath, lastSlash - tempPath);
+        dirName[lastSlash - tempPath] = '\0';
+        strcpy(baseName, lastSlash + 1);
+    } else {
+        // No '/' in the path, meaning it's just a file or directory name in the cwd
+        strcpy(baseName, tempPath);
+        strcpy(dirName, "");  // Empty dirName for current directory
+    }
 
-    // Tokenize the dirName by "/"
-    char* token = strtok(dirName, "/");
-    while (token != NULL) {
-        struct NODE* found = NULL;
-        struct NODE* temp = currentDir->childPtr;
+    // Traverse the directory tree based on dirName
+    if (strlen(dirName) > 0) {
+        char* token = strtok(dirName, "/");
+        while (token != NULL) {
+            struct NODE* child = current->childPtr;
+            int found = 0;
 
-        // Search for the directory in the current level
-        while (temp != NULL) {
-            if (strcmp(temp->name, token) == 0 && temp->fileType == 'd') {
-                found = temp;
-                break;
+            // Search for the directory in the current node's children
+            while (child != NULL) {
+                if (strcmp(child->name, token) == 0 && child->fileType == 'd') {
+                    // Found a matching directory
+                    current = child;
+                    found = 1;
+                    break;
+                }
+                child = child->siblingPtr;
             }
-            temp = temp->siblingPtr;
-        }
 
-        // If not found, print error and return NULL
-        if (found == NULL) {
-            printf("ERROR: directory %s does not exist\n", token);
-            return NULL;
-        }
+            // If the directory doesn't exist, print an error and return NULL
+            if (!found) {
+                printf("ERROR: directory %s does not exist\n", token);
+                return NULL;
+            }
 
-        // Move to the next directory level
-        currentDir = found;
-        token = strtok(NULL, "/");
+            // Continue to the next part of the path
+            token = strtok(NULL, "/");
+        }
     }
 
-    return currentDir; // Return the parent directory where the target resides
+    // Return the pointer to the parent directory where the new directory/file should be created
+    return current;
 }

@@ -7,45 +7,7 @@
 extern struct NODE* root;
 extern struct NODE* cwd;
 
-// struct NODE* findDirectory(struct NODE* parent, const char* dirName) {
-//     struct NODE* current = parent->childPtr;
-//     while (current != NULL) {
-//         if (strcmp(current->name, dirName) == 0 && current->fileType == 'd') {
-//             return current;
-//         }
-//         current = current->siblingPtr;
-//     }
-//     return NULL;
-// }
 
-
-// // Helper function to check if a directory or file already exists in the parent directory
-// int checkIfExists(struct NODE* parent, const char* baseName) {
-//     struct NODE* current = parent->childPtr;
-//     while (current != NULL) {
-//         if (strcmp(current->name, baseName) == 0) {
-//             return 1; // Found the directory or file
-//         }
-//         current = current->siblingPtr;
-//     }
-//     return 0;
-// }
-
-// // Helper function to add a new node (directory) to the parent's child/sibling list
-// void addNode(struct NODE* parent, struct NODE* newNode) {
-//     if (parent->childPtr == NULL) {
-//         // If parent has no child, add newNode as the first child
-//         parent->childPtr = newNode;
-//     } else {
-//         // Traverse sibling list and add newNode at the end
-//         struct NODE* current = parent->childPtr;
-//         while (current->siblingPtr != NULL) {
-//             current = current->siblingPtr;
-//         }
-//         current->siblingPtr = newNode;
-//     }
-// }
-//make directory
 void mkdir(char pathName[]){
 
   
